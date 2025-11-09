@@ -10,6 +10,20 @@ from mailer.send_report import send_email_report
 from config.settings import SEARCH_CONFIG
 import os
 
+@app.route("/update_config", methods=["POST"])
+def update_config():
+    data = request.form
+    from config.settings import SEARCH_CONFIG
+
+    SEARCH_CONFIG["location"] = data.get("location", "United Kingdom")
+    SEARCH_CONFIG["min_price"] = int(data.get("min_price", 1000))
+    SEARCH_CONFIG["max_price"] = int(data.get("max_price", 8000))
+    SEARCH_CONFIG["keywords"] = [kw.strip() for kw in data.get("keywords", "").split(",") if kw.strip()]
+
+    with open("config/settings.py", "w", encoding="utf-8") as f:
+        f.write("SEARCH_CONFIG = " + json.dumps(SEARCH_CONFIG, indent=4))
+    return render_template_string("<h3>✅ Ustawienia zapisane.</h3><a href='/'>⬅️ Wróć</a>")
+
 # Upewnij się, że folder 'data' istnieje
 os.makedirs("data", exist_ok=True)
 
@@ -79,45 +93,117 @@ def config_page():
 # ===== PANEL WWW =====
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>AutoFinder24/7 Dashboard</title>
-<style>
-body { background-color: #0d0d0d; color: #d1d1d1; font-family: Arial, sans-serif; }
-h1 { color: #4CAF50; }
-button { background-color: #4CAF50; color: black; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
-button:hover { background-color: #66ff66; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { padding: 10px; border-bottom: 1px solid #333; text-align: left; }
-tr:hover { background-color: #1a1a1a; }
-a { color: #4CAF50; text-decoration: none; }
-.rating { font-weight: bold; }
-.green { color: #4CAF50; }
-.yellow { color: #FFD700; }
-.red { color: #ff5050; }
-</style>
+    <meta charset="UTF-8">
+    <title>AutoFinder24/7 — Dashboard</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #d1d1d1;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            margin: 0;
+        }
+        .sidebar {
+            width: 300px;
+            background: #111;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h1 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            background: #222;
+            border: 1px solid #333;
+            color: #eee;
+        }
+        button {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-refresh { background: #9C27B0; color: white; }
+        .btn-email { background: #2196F3; color: white; }
+        .btn-save { background: #4CAF50; color: white; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            text-align: left;
+        }
+        th { color: #4CAF50; }
+        a { color: #4CAF50; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
-<h1>AutoFinder24/7 — Market Intelligence</h1>
-<p>Last updated: {{ timestamp }}</p>
-<form method="post" action="/send_email">
-<button type="submit">📧 Wyślij testowy e-mail</button>
-</form>
-<table>
-<tr><th>Title</th><th>Price (£)</th><th>Market (£)</th><th>Rating</th><th>Link</th></tr>
-{% for r in results %}
-<tr>
-<td>{{ r['title'] }}</td>
-<td>{{ r['price'] }}</td>
-<td>{{ r.get('market_price', '-') }}</td>
-<td class="rating {% if 'Bargain' in r.get('rating','') %}green{% elif 'Fair' in r.get('rating','') %}yellow{% elif 'Over' in r.get('rating','') %}red{% endif %}">{{ r.get('rating','-') }}</td>
-<td><a href="{{ r['url'] }}" target="_blank">View</a></td>
-</tr>
-{% endfor %}
-</table>
+    <div class="sidebar">
+        <h1>AutoFinder24/7</h1>
+        <form method="POST" action="/update_config">
+            <label>📍 Lokalizacja</label>
+            <input type="text" name="location" value="{{ config['location'] }}">
+            <label>💷 Cena minimalna</label>
+            <input type="number" name="min_price" value="{{ config['min_price'] }}">
+            <label>💷 Cena maksymalna</label>
+            <input type="number" name="max_price" value="{{ config['max_price'] }}">
+            <label>🔍 Słowa kluczowe (oddziel przecinkami)</label>
+            <input type="text" name="keywords" value="{{ ', '.join(config['keywords']) }}">
+            <button type="submit" class="btn-save">💾 Zapisz ustawienia</button>
+        </form>
+        <form method="POST" action="/refresh_data">
+            <button type="submit" class="btn-refresh">🌀 Odśwież dane</button>
+        </form>
+        <form method="POST" action="/send_email">
+            <button type="submit" class="btn-email">✉️ Wyślij testowy e-mail</button>
+        </form>
+    </div>
+    <div class="content">
+        <h2>📊 Wyniki wyszukiwania</h2>
+        <p>Ostatnia aktualizacja: {{ timestamp }}</p>
+        <table>
+            <tr><th>Tytuł</th><th>Cena (£)</th><th>Miasto</th><th>Link</th></tr>
+            {% for r in results %}
+            <tr>
+                <td>{{ r['title'] }}</td>
+                <td>{{ r['price'] }}</td>
+                <td>{{ r['location'] }}</td>
+                <td><a href="{{ r['url'] }}" target="_blank">Otwórz</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>
+
 """
 
 @app.route("/", methods=["GET"])
@@ -170,6 +256,7 @@ def run_scheduler():
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
