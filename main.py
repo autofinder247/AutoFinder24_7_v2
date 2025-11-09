@@ -10,6 +10,8 @@ from mailer.send_report import send_email_report
 from config.settings import SEARCH_CONFIG
 import os
 
+app = Flask(__name__)
+
 @app.route("/update_config", methods=["POST"])
 def update_config():
     data = request.form
@@ -26,8 +28,6 @@ def update_config():
 
 # Upewnij się, że folder 'data' istnieje
 os.makedirs("data", exist_ok=True)
-
-app = Flask(__name__)
 
 import json
 import os
@@ -274,6 +274,7 @@ def run_scheduler():
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
