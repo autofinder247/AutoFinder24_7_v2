@@ -270,10 +270,33 @@ def run_scheduler():
     while True:
         schedule.run_pending()
         time.sleep(60)
+        
+@app.route("/debug_scraper")
+def debug_scraper():
+    from finder.gumtree_scraper import get_gumtree_results
+    try:
+        results = get_gumtree_results(limit=10)
+        if not results:
+            return "<h3>❌ Brak wyników. Scraper nie zwrócił żadnych danych.</h3>", 200
+
+        html = "<h2>🔍 Wyniki testowe:</h2><ul>"
+        for r in results:
+            html += f"<li><b>{r['title']}</b> – {r['price']} – <a href='{r['link']}'>link</a></li>"
+        html += "</ul>"
+        return html, 200
+    except Exception as e:
+        return f"<h3>❌ Błąd scrapera: {e}</h3>", 500
+
 
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
+
+if __name__ == "__main__":
+    threading.Thread(target=run_scheduler, daemon=True).start()
+    app.run(host="0.0.0.0", port=10000)
+
 
 
 
