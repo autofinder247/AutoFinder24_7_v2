@@ -6,7 +6,7 @@ import json
 from flask import Flask, render_template_string, request
 from finder.gumtree_scraper import get_gumtree_results
 from finder.filters import filter_results
-from email.send_report import send_email_report
+from mailer.send_report import send_email_report
 from config.settings import SEARCH_CONFIG
 
 app = Flask(__name__)
@@ -105,3 +105,4 @@ def run_scheduler():
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
