@@ -227,6 +227,24 @@ def manual_send():
     return "📨 Testowy e-mail wysłany! Odśwież stronę, aby wrócić."
 
 # ===== HARMONOGRAM =====
+@app.route("/refresh_data", methods=["POST"])
+def refresh_data():
+    from finder.gumtree_scraper import get_gumtree_results
+    from finder.filters import filter_results
+    from config.settings import SEARCH_CONFIG
+
+    results = get_gumtree_results(SEARCH_CONFIG)
+    filtered = filter_results(results, SEARCH_CONFIG)
+
+    os.makedirs("data", exist_ok=True)
+    with open("data/results.json", "w", encoding="utf-8") as f:
+        json.dump(filtered, f, indent=4, ensure_ascii=False)
+
+    return render_template_string("""
+        <h3>✅ Dane zostały zaktualizowane ({{ count }} wyników zapisano).</h3>
+        <a href="/">⬅️ Wróć do panelu</a>
+    """, count=len(filtered))
+
 def job():
     now = datetime.datetime.now()
     hour = now.hour
@@ -256,6 +274,7 @@ def run_scheduler():
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
