@@ -7,9 +7,9 @@ from datetime import time
 
 SEARCH_CONFIG = {
     "location": "United Kingdom",
-    "min_price": 1000,
-    "max_price": 8000,
-    "keywords": ["polo", "fiesta", "corsa", "ibiza", "micra"],
+    "min_price": 10,
+    "max_price": 80000,
+    "keywords": ["vw", "polo", "ford", "fiesta", "ibiza"],
     "max_results": 30
 }
 
@@ -38,3 +38,4 @@ SCHEDULE = {
 # ===================================
 
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+
