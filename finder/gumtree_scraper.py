@@ -47,7 +47,9 @@ def get_gumtree_results(limit=20):
     print("🔍 Fetching listings from Gumtree UK...")
 
     try:
-        response = requests.get(SEARCH_URL, headers=headers, timeout=10)
+        search_url = build_search_url()
+        response = requests.get(search_url, headers=headers, timeout=10)
+
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -79,6 +81,7 @@ def get_gumtree_results(limit=20):
     except Exception as e:
         print(f"❌ Error fetching Gumtree data: {e}")
         return []
+
 
 
 
