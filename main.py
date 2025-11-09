@@ -15,6 +15,67 @@ os.makedirs("data", exist_ok=True)
 
 app = Flask(__name__)
 
+import json
+import os
+
+CONFIG_FILE = "data/config.json"
+
+# Upewnij się, że plik istnieje
+os.makedirs("data", exist_ok=True)
+if not os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump({
+            "location": "United Kingdom",
+            "min_price": 1000,
+            "max_price": 8000,
+            "keywords": ["polo", "fiesta", "corsa", "ibiza", "micra"],
+            "max_results": 30
+        }, f, indent=4)
+
+# Strona konfiguracji
+@app.route("/config", methods=["GET", "POST"])
+def config_page():
+    if request.method == "POST":
+        location = request.form.get("location")
+        min_price = int(request.form.get("min_price"))
+        max_price = int(request.form.get("max_price"))
+        keywords = [k.strip() for k in request.form.get("keywords").split(",") if k.strip()]
+
+        config = {
+            "location": location,
+            "min_price": min_price,
+            "max_price": max_price,
+            "keywords": keywords,
+            "max_results": 30
+        }
+
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=4)
+
+        return "✅ Settings saved! Refresh page to continue."
+
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    return render_template_string("""
+    <h2>🔧 AutoFinder24/7 – Search Config</h2>
+    <form method="POST">
+        <label>Location:</label><br>
+        <input type="text" name="location" value="{{config.location}}"><br><br>
+
+        <label>Min price:</label><br>
+        <input type="number" name="min_price" value="{{config.min_price}}"><br><br>
+
+        <label>Max price:</label><br>
+        <input type="number" name="max_price" value="{{config.max_price}}"><br><br>
+
+        <label>Keywords (comma-separated):</label><br>
+        <input type="text" name="keywords" value="{{ ', '.join(config.keywords) }}"><br><br>
+
+        <button type="submit">💾 Save settings</button>
+    </form>
+    """, config=config)
+
 # ===== PANEL WWW =====
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -109,5 +170,6 @@ def run_scheduler():
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     app.run(host="0.0.0.0", port=10000)
+
 
 
