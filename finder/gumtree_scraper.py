@@ -36,58 +36,49 @@ def build_search_url():
 
 
 def get_gumtree_results(limit=20):
-    """Pobiera ogłoszenia samochodowe z Gumtree UK."""
-    log_message("🚀 get_gumtree_results() uruchomione!")
-
-    search_url = build_search_url()
-    log_message(f"🔍 Używany URL: {search_url}")
-
+    """Scrapes basic car listings from Gumtree UK."""
     results = []
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0 Safari/537.36"
-        )
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0 Safari/537.36"
     }
 
+    print("🔍 Fetching listings from Gumtree UK...")
+
     try:
-        response = requests.get(search_url, headers=headers, timeout=10)
+        response = requests.get(SEARCH_URL, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
-        listings = soup.select("li[data-q='search-result']")[:limit]
-        log_message(f"📋 Znaleziono {len(listings)} ogłoszeń na stronie.")
+        # Nowa struktura Gumtree: każdy listing to <article> z a[href*='/p/cars/']
+        listings = soup.select("article a[href*='/p/cars/']")[:limit]
 
-        for listing in listings:
-            title_elem = listing.select_one("h2 a span")
-            price_elem = listing.select_one("strong[data-q='price']")
-            link_elem = listing.select_one("a[href*='/classified']")
-            city_elem = listing.select_one("div[data-q='location']")
+        for link_elem in listings:
+            title = link_elem.get_text(strip=True)
+            link = link_elem["href"]
+            if not link.startswith("http"):
+                link = BASE_URL + link
 
-            title = title_elem.text.strip() if title_elem else "No title"
-            price = price_elem.text.strip() if price_elem else "No price"
-            city = city_elem.text.strip() if city_elem else "Unknown"
-            link = (
-                BASE_URL + link_elem["href"]
-                if link_elem and link_elem.get("href")
-                else "No link"
-            )
+            # Cena jest często w sąsiednim <span>
+            parent = link_elem.find_parent("article")
+            price_elem = parent.select_one("span[data-testid='listing-price']") if parent else None
+            price = price_elem.get_text(strip=True) if price_elem else "No price"
 
             results.append({
                 "title": title,
                 "price": price,
-                "city": city,
                 "link": link
             })
 
-            time.sleep(random.uniform(0.3, 0.7))
+            time.sleep(random.uniform(0.5, 1.0))
 
-        log_message(f"✅ Successfully scraped {len(results)} results.")
+        print(f"✅ Successfully scraped {len(results)} results.")
         return results
 
     except Exception as e:
-        log_message(f"❌ Error fetching Gumtree data: {e}")
+        print(f"❌ Error fetching Gumtree data: {e}")
         return []
+
 
 
