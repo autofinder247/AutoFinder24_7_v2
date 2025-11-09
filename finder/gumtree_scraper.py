@@ -6,8 +6,8 @@ import random
 BASE_URL = "https://www.gumtree.com"
 SEARCH_URL = "https://www.gumtree.com/search?search_category=cars&search_location=uk"
 
-def get_gumtree_results(limit=20):
-        print("🚀 get_gumtree_results() uruchomione!")
+def get_gumtree_results(limit=20):  
+    print("🚀 get_gumtree_results() uruchomione!")
     print(f"🔍 Używany URL: {SEARCH_URL}")
     """Scrapes basic car listings from Gumtree UK."""
     results = []
@@ -48,4 +48,5 @@ def get_gumtree_results(limit=20):
     except Exception as e:
         print(f"❌ Error fetching Gumtree data: {e}")
         return []
+
 
