@@ -2,9 +2,20 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import random
+import os
+from datetime import datetime
 from config.settings import SEARCH_CONFIG
 
 BASE_URL = "https://www.gumtree.com"
+LOG_FILE = "data/logs.txt"
+
+def log_message(message):
+    """Zapisuje komunikaty diagnostyczne do pliku logów"""
+    os.makedirs("data", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] {message}\n")
+
 
 def build_search_url():
     """Tworzy dynamiczny adres URL na podstawie SEARCH_CONFIG."""
@@ -12,7 +23,7 @@ def build_search_url():
     min_price = SEARCH_CONFIG.get("min_price", 0)
     max_price = SEARCH_CONFIG.get("max_price", 10000)
     keywords = "+".join(SEARCH_CONFIG.get("keywords", []))
-    
+
     url = (
         f"{BASE_URL}/search?search_category=cars"
         f"&search_location={location}"
@@ -26,10 +37,10 @@ def build_search_url():
 
 def get_gumtree_results(limit=20):
     """Pobiera ogłoszenia samochodowe z Gumtree UK."""
-    print("🚀 get_gumtree_results() uruchomione!")
-    
+    log_message("🚀 get_gumtree_results() uruchomione!")
+
     search_url = build_search_url()
-    print(f"🔍 Używany URL: {search_url}")
+    log_message(f"🔍 Używany URL: {search_url}")
 
     results = []
     headers = {
@@ -41,13 +52,12 @@ def get_gumtree_results(limit=20):
     }
 
     try:
-        response = requests.get(search_url, headers=headers)
+        response = requests.get(search_url, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
         listings = soup.select("li[data-q='search-result']")[:limit]
-
-        print(f"📋 Znaleziono {len(listings)} ogłoszeń na stronie.")
+        log_message(f"📋 Znaleziono {len(listings)} ogłoszeń na stronie.")
 
         for listing in listings:
             title_elem = listing.select_one("h2 a span")
@@ -71,13 +81,13 @@ def get_gumtree_results(limit=20):
                 "link": link
             })
 
-            time.sleep(random.uniform(0.3, 0.7))  # opóźnienie dla bezpieczeństwa
+            time.sleep(random.uniform(0.3, 0.7))
 
-        print(f"✅ Successfully scraped {len(results)} results.")
+        log_message(f"✅ Successfully scraped {len(results)} results.")
         return results
 
     except Exception as e:
-        print(f"❌ Error fetching Gumtree data: {e}")
+        log_message(f"❌ Error fetching Gumtree data: {e}")
         return []
 
 
