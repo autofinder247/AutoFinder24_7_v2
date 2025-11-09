@@ -7,6 +7,8 @@ BASE_URL = "https://www.gumtree.com"
 SEARCH_URL = "https://www.gumtree.com/search?search_category=cars&search_location=uk"
 
 def get_gumtree_results(limit=20):
+        print("🚀 get_gumtree_results() uruchomione!")
+    print(f"🔍 Używany URL: {SEARCH_URL}")
     """Scrapes basic car listings from Gumtree UK."""
     results = []
     headers = {
@@ -38,10 +40,12 @@ def get_gumtree_results(limit=20):
             })
 
             time.sleep(random.uniform(0.5, 1.0))  # Simulate human-like delay
-
+            
+        print(f"✅ Znaleziono {len(results)} wyników.")
         print(f"✅ Successfully scraped {len(results)} results.")
         return results
 
     except Exception as e:
         print(f"❌ Error fetching Gumtree data: {e}")
         return []
+
